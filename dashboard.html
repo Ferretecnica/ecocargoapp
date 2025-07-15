@@ -7,6 +7,8 @@
     <!-- Favicon (Logo en la pestaña) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%236ee7b7'><path stroke-linecap='round' stroke-linejoin='round' d='M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125V6.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.001c0 .621.504 1.125 1.125 1.125z' /></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para el gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -61,34 +63,42 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 id="welcomeMessage" class="text-3xl font-bold mb-8"></h1>
+            <h1 id="welcomeMessage" class="text-3xl font-bold mb-6"></h1>
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Columna de Tarifas -->
-                <div class="lg:col-span-1">
-                    <div class="card p-6 rounded-xl shadow-lg">
-                        <h2 class="text-xl font-semibold mb-4 text-emerald-400">Panel de Tarifas</h2>
-                        <ul class="space-y-3 text-gray-300">
-                            <li class="flex justify-between"><span>Tarifa Base</span> <strong>C$ 50.00</strong></li>
-                            <li class="flex justify-between"><span>Costo por KM</span> <strong>C$ 30.00</strong></li>
-                            <li class="flex justify-between border-t border-gray-700 pt-3 mt-3"><span>Servicio Mínimo</span> <strong>C$ 50.00</strong></li>
-                        </ul>
-                        <p class="text-xs text-gray-500 mt-4">Las tarifas son aproximadas y pueden variar según la ruta y el tráfico.</p>
-                    </div>
+            <!-- Tarjetas de Estadísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                    <h3 class="text-sm font-medium text-gray-400">Envíos Totales</h3>
+                    <p id="totalShipments" class="text-3xl font-bold text-emerald-400 mt-2">0</p>
                 </div>
+                <div class="card p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                    <h3 class="text-sm font-medium text-gray-400">Total Gastado</h3>
+                    <p id="totalCost" class="text-3xl font-bold text-emerald-400 mt-2">C$ 0.00</p>
+                </div>
+                <div class="card p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                    <h3 class="text-sm font-medium text-gray-400">Kilometraje Total</h3>
+                    <p id="totalKm" class="text-3xl font-bold text-emerald-400 mt-2">0 km</p>
+                </div>
+            </div>
 
-                <!-- Columna de Envíos -->
-                <div class="lg:col-span-2">
-                    <div class="card p-6 rounded-xl shadow-lg">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <!-- Columna de Historial de Envíos -->
+                <div class="lg:col-span-3">
+                    <div class="card p-6 rounded-xl shadow-lg h-full">
                         <h2 class="text-xl font-semibold mb-4 text-emerald-400">Historial de Envíos</h2>
                         <div id="shipmentsList" class="space-y-4">
-                            <!-- Loader -->
                             <div id="loader" class="text-center py-10">
                                 <div class="spinner w-8 h-8 border-4 border-emerald-500 mx-auto"></div>
                                 <p class="mt-4 text-gray-400">Cargando envíos...</p>
                             </div>
-                            <!-- La lista se cargará aquí -->
                         </div>
+                    </div>
+                </div>
+                <!-- Columna de Gráfico -->
+                <div class="lg:col-span-2">
+                    <div class="card p-6 rounded-xl shadow-lg h-full">
+                        <h2 class="text-xl font-semibold mb-4 text-emerald-400">Actividad Semanal</h2>
+                        <canvas id="shipmentsChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -104,6 +114,7 @@
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsliiNP8YG3bx_31S0Lb60XA1Q_rGVmuH6gA0_HQ0CZUg3card7ZVxozXzem9W_w3q/exec';
+        let shipmentsChart = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             const userName = user.name.split(' ')[0];
@@ -127,8 +138,7 @@
             const loader = document.getElementById('loader');
             
             try {
-                // --- CÓDIGO REAL ACTIVADO ---
-                const response = await fetch(`${SCRIPT_URL}?action=getShipments&userId=${user.id}`);
+                const response = await fetch(`${SCRIPT_URL}?action=getShipments&email=${user.email}`);
                 if (!response.ok) {
                     throw new Error(`Error del servidor: ${response.statusText}`);
                 }
@@ -136,30 +146,117 @@
 
                 loader.style.display = 'none';
 
-                if (result.status === 'success' && result.shipments && result.shipments.length > 0) {
-                    listDiv.innerHTML = result.shipments.map(s => `
+                if (result.success === true && result.data && result.data.length > 0) {
+                    const shipments = result.data;
+                    
+                    // Renderizar lista de envíos
+                    listDiv.innerHTML = shipments.map(s => `
                         <div class="border-b border-gray-700 p-4 -mx-4 hover:bg-gray-700/50 transition-colors duration-200">
                             <div class="flex justify-between items-center">
                                 <p class="font-semibold text-white">Para: ${s.receiverName}</p>
-                                <p class="text-sm font-bold text-emerald-400">C$ ${s.cost}</p>
+                                <p class="text-sm font-bold text-emerald-400">C$ ${s.estimatedCost}</p>
                             </div>
                             <div class="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                <span>${s.orderId} - ${new Date(s.date).toLocaleDateString()}</span>
+                                <span>${s.orderId} - ${new Date(s.timestamp).toLocaleDateString()}</span>
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium ${
                                     s.status === 'Entregado' ? 'bg-green-500/20 text-green-400' :
                                     s.status === 'En Camino' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    s.status === 'Pendiente' ? 'bg-blue-500/20 text-blue-400' :
                                     'bg-red-500/20 text-red-400'
                                 }">${s.status}</span>
                             </div>
                         </div>
                     `).join('');
+                    
+                    // Calcular y mostrar estadísticas
+                    calculateAndDisplayStats(shipments);
+                    
                 } else {
                     listDiv.innerHTML = `<p class="text-center text-gray-500 py-10">No tienes envíos registrados.</p>`;
+                    // Incluso sin envíos, mostrar el gráfico vacío
+                    calculateAndDisplayStats([]);
                 }
             } catch (error) {
                 loader.style.display = 'none';
                 listDiv.innerHTML = `<p class="text-center text-red-400 py-10">Error al cargar los envíos: ${error.message}</p>`;
             }
+        }
+
+        function calculateAndDisplayStats(shipments) {
+            // Calcular totales
+            const totalShipments = shipments.length;
+            const totalCost = shipments.reduce((sum, s) => sum + parseFloat(s.estimatedCost || 0), 0);
+            
+            // NOTA: El cálculo de KM requiere que el script devuelva la distancia.
+            // Asumiremos que está en 's.fullDetails.distance' si existe.
+            const totalKm = shipments.reduce((sum, s) => sum + parseFloat(s.fullDetails?.distance || 0), 0);
+
+            // Actualizar tarjetas de estadísticas
+            document.getElementById('totalShipments').textContent = totalShipments;
+            document.getElementById('totalCost').textContent = `C$ ${totalCost.toFixed(2)}`;
+            document.getElementById('totalKm').textContent = `${totalKm.toFixed(2)} km`;
+
+            // Preparar datos para el gráfico
+            const weeklyData = [0, 0, 0, 0, 0, 0, 0]; // Dom, Lun, Mar, Mié, Jue, Vie, Sáb
+            const today = new Date();
+            const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+
+            shipments.forEach(s => {
+                const shipmentDate = new Date(s.timestamp);
+                const diffDays = Math.floor((shipmentDate - firstDayOfWeek) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 0 && diffDays < 7) {
+                    weeklyData[shipmentDate.getDay()]++;
+                }
+            });
+
+            renderShipmentsChart(weeklyData);
+        }
+
+        function renderShipmentsChart(data) {
+            const ctx = document.getElementById('shipmentsChart').getContext('2d');
+            if (shipmentsChart) {
+                shipmentsChart.destroy();
+            }
+            shipmentsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+                    datasets: [{
+                        label: 'Envíos',
+                        data: data,
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#374151',
+                            titleColor: '#f3f4f6',
+                            bodyColor: '#d1d5db',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#9ca3af',
+                                stepSize: 1
+                            },
+                            grid: { color: 'rgba(107, 114, 128, 0.3)' }
+                        },
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>
