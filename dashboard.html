@@ -96,9 +96,13 @@
                 </div>
                 <!-- Columna de Gráfico -->
                 <div class="lg:col-span-2">
-                    <div class="card p-6 rounded-xl shadow-lg h-full">
-                        <h2 class="text-xl font-semibold mb-4 text-emerald-400">Actividad Semanal</h2>
-                        <canvas id="shipmentsChart"></canvas>
+                    <!-- CORRECCIÓN: Se añade 'flex flex-col' al contenedor de la tarjeta -->
+                    <div class="card p-6 rounded-xl shadow-lg h-full flex flex-col">
+                        <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex-shrink-0">Actividad Semanal</h2>
+                        <!-- CORRECCIÓN: Se envuelve el canvas en un div con 'relative' y 'flex-grow' -->
+                        <div class="relative flex-grow w-full">
+                            <canvas id="shipmentsChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
