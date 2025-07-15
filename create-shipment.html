@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ecocargo - Crear Nuevo Envío</title>
+    <!-- Favicon (Logo en la pestaña) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%236ee7b7'><path stroke-linecap='round' stroke-linejoin='round' d='M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125V6.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.001c0 .621.504 1.125 1.125 1.125z' /></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -112,15 +114,15 @@ function renderForm() {
             <h3 class="text-lg font-semibold mb-4 text-emerald-400">Información del Remitente</h3>
             <div>
                 <label for="senderName" class="block text-sm font-medium text-gray-300">Nombre</label>
-                <input type="text" id="senderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                <input type="text" id="senderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Nombre completo">
             </div>
             <div class="mt-4">
                 <label for="senderPhone" class="block text-sm font-medium text-gray-300">Teléfono</label>
-                <input type="tel" id="senderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                <input type="tel" id="senderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Ej: 88887777">
             </div>
             <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-300">Coordenadas Origen</label>
-                <input type="text" id="senderCoords" class="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md" readonly>
+                <input type="text" id="senderCoords" class="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md" readonly placeholder="Fijar en el mapa">
             </div>
         </div>
         <!-- Paso 2: Destinatario -->
@@ -128,15 +130,15 @@ function renderForm() {
             <h3 class="text-lg font-semibold mb-4 text-emerald-400">Información del Destinatario</h3>
             <div>
                 <label for="receiverName" class="block text-sm font-medium text-gray-300">Nombre</label>
-                <input type="text" id="receiverName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                <input type="text" id="receiverName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Nombre completo">
             </div>
             <div class="mt-4">
                 <label for="receiverPhone" class="block text-sm font-medium text-gray-300">Teléfono</label>
-                <input type="tel" id="receiverPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                <input type="tel" id="receiverPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Ej: 88887777">
             </div>
             <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-300">Coordenadas Destino</label>
-                <input type="text" id="receiverCoords" class="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md" readonly>
+                <input type="text" id="receiverCoords" class="mt-1 block w-full bg-gray-800 border-gray-600 rounded-md" readonly placeholder="Fijar en el mapa">
             </div>
         </div>
         <!-- Paso 3: Paquete -->
@@ -150,7 +152,7 @@ function renderForm() {
             </div>
             <div class="mt-4">
                 <label for="packageNotes" class="block text-sm font-medium text-gray-300">Notas Adicionales</label>
-                <textarea id="packageNotes" rows="3" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
+                <textarea id="packageNotes" rows="3" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Ej: Paquete frágil, entregar en recepción..."></textarea>
             </div>
         </div>
         <!-- Paso 4: Confirmación -->
@@ -184,37 +186,33 @@ function renderForm() {
 }
 
 function updateUI() {
-    // Update form steps visibility
     document.querySelectorAll('.form-step').forEach(step => step.classList.add('hidden'));
     document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('hidden');
 
-    // Update progress bar
     document.querySelectorAll('#progressBar .step-item').forEach((item, index) => {
         const circle = item.querySelector('.step-circle');
         const text = item.querySelector('p');
         const line = document.querySelectorAll('.progress-line')[index - 1];
 
-        if (index + 1 < currentStep) { // Completed
+        if (index + 1 < currentStep) {
             circle.className = 'step-circle relative mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all duration-300 bg-emerald-600 text-white';
             text.className = 'mt-2 text-xs transition-all duration-300 text-gray-200';
             if(line) line.className = 'progress-line flex-1 h-0.5 transition-all duration-300 bg-emerald-600';
-        } else if (index + 1 === currentStep) { // Active
+        } else if (index + 1 === currentStep) {
             circle.className = 'step-circle relative mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all duration-300 bg-blue-600 text-white scale-110';
             text.className = 'mt-2 text-xs transition-all duration-300 text-white font-semibold';
              if(line) line.className = 'progress-line flex-1 h-0.5 transition-all duration-300 bg-gray-600';
-        } else { // Pending
+        } else {
             circle.className = 'step-circle relative mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all duration-300 bg-gray-700 text-gray-400';
             text.className = 'mt-2 text-xs transition-all duration-300 text-gray-500';
             if(document.querySelectorAll('.progress-line')[index]) document.querySelectorAll('.progress-line')[index].className = 'progress-line flex-1 h-0.5 transition-all duration-300 bg-gray-600';
         }
     });
 
-    // Update navigation buttons
     document.getElementById('prevBtn').classList.toggle('hidden', currentStep === 1);
     document.getElementById('nextBtn').classList.toggle('hidden', currentStep === stepsConfig.length);
     document.getElementById('confirmBtn').classList.toggle('hidden', currentStep !== stepsConfig.length);
 
-    // Update map status
     const mapStatus = document.getElementById('mapStatus');
     mapStatus.innerHTML = stepsConfig[currentStep - 1].mapInstruction;
     mapStatus.classList.toggle('hidden', currentStep > 2 && currentStep < 4);
@@ -366,22 +364,32 @@ async function handleConfirm() {
     };
 
     try {
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulación
-        const result = { status: 'success' };
+        // --- CÓDIGO REAL ACTIVADO ---
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Importante para Google Apps Script si no se maneja CORS
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // Nota: Con 'no-cors', no podemos leer la respuesta, asumimos éxito si no hay error de red.
+        // La lógica de abajo se ejecutará inmediatamente.
+        // Si necesitas leer la respuesta, debes configurar CORS en tu script de Google.
 
-        if (result.status === 'success') {
-            showNotification('success', '¡Envío Registrado!', 'Se abrirá WhatsApp para que compartas los detalles.');
-            const senderLink = `https://www.google.com/maps?q=${payload.senderCoords}`;
-            const receiverLink = `https://www.google.com/maps?q=${payload.receiverCoords}`;
-            const message = `*Nuevo envío Ecocargo (ID: ${payload.orderId})*\n\n*De:* ${payload.sender.name}\n*Para:* ${payload.receiver.name}\n*Costo:* C$ ${payload.cost}\n\n*Origen:* ${senderLink}\n*Destino:* ${receiverLink}`;
-            
-            setTimeout(() => {
-                window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
-                window.location.href = 'dashboard.html';
-            }, 2000);
-        } else { throw new Error('Error al guardar el envío.'); }
+        showNotification('success', '¡Envío Registrado!', 'Se abrirá WhatsApp para que compartas los detalles.');
+        const senderLink = `https://www.google.com/maps?q=${payload.senderCoords}`;
+        const receiverLink = `https://www.google.com/maps?q=${payload.receiverCoords}`;
+        const message = `*Nuevo envío Ecocargo (ID: ${payload.orderId})*\n\n*De:* ${payload.sender.name}\n*Para:* ${payload.receiver.name}\n*Costo:* C$ ${payload.cost}\n\n*Origen:* ${senderLink}\n*Destino:* ${receiverLink}`;
+        
+        setTimeout(() => {
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+            window.location.href = 'dashboard.html';
+        }, 2000);
+
     } catch (error) {
-        showNotification('error', 'Error', error.message);
+        showNotification('error', 'Error', `No se pudo guardar el envío: ${error.message}`);
         btn.disabled = false;
         btnText.classList.remove('hidden');
         spinner.classList.add('hidden');
@@ -405,10 +413,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderForm();
     updateUI();
 
-    // Event Listeners
-    document.getElementById('nextBtn').addEventListener('click', handleNextStep);
-    document.getElementById('prevBtn').addEventListener('click', handlePrevStep);
-    document.getElementById('confirmBtn').addEventListener('click', handleConfirm);
+    document.getElementById('navigation').addEventListener('click', (e) => {
+        if (e.target.id === 'nextBtn') handleNextStep();
+        if (e.target.id === 'prevBtn') handlePrevStep();
+        if (e.target.id === 'confirmBtn') handleConfirm();
+    });
+
     document.getElementById('logoutButton').addEventListener('click', () => {
         sessionStorage.removeItem('ecocargoUser');
         window.location.href = 'index.html';
