@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecocargo - Panel de Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .spinner {
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .card {
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <script>
+        const userData = sessionStorage.getItem('ecocargoUser');
+        if (!userData) {
+            window.location.href = 'index.html';
+        }
+        const user = JSON.parse(userData);
+    </script>
+
+    <div id="app-wrapper" class="relative">
+        <header class="bg-gray-800/80 backdrop-blur-lg sticky top-0 z-20 border-b border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-4">
+                        <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125V6.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.001c0 .621.504 1.125 1.125 1.125z" />
+                        </svg>
+                        <span class="text-xl font-bold text-white">Ecocargo</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userName" class="text-sm text-gray-300 hidden md:block"></span>
+                        <button id="logoutButton" class="bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 id="welcomeMessage" class="text-3xl font-bold mb-8"></h1>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Columna de Tarifas -->
+                <div class="lg:col-span-1">
+                    <div class="card p-6 rounded-xl shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4 text-emerald-400">Panel de Tarifas</h2>
+                        <ul class="space-y-3 text-gray-300">
+                            <li class="flex justify-between"><span>Tarifa Base</span> <strong>C$ 50.00</strong></li>
+                            <li class="flex justify-between"><span>Costo por KM</span> <strong>C$ 30.00</strong></li>
+                            <li class="flex justify-between border-t border-gray-700 pt-3 mt-3"><span>Servicio Mínimo</span> <strong>C$ 50.00</strong></li>
+                        </ul>
+                        <p class="text-xs text-gray-500 mt-4">Las tarifas son aproximadas y pueden variar según la ruta y el tráfico.</p>
+                    </div>
+                </div>
+
+                <!-- Columna de Envíos -->
+                <div class="lg:col-span-2">
+                    <div class="card p-6 rounded-xl shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4 text-emerald-400">Historial de Envíos</h2>
+                        <div id="shipmentsList" class="space-y-4">
+                            <!-- Loader -->
+                            <div id="loader" class="text-center py-10">
+                                <div class="spinner w-8 h-8 border-4 border-emerald-500 mx-auto"></div>
+                                <p class="mt-4 text-gray-400">Cargando envíos...</p>
+                            </div>
+                            <!-- La lista se cargará aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Botón Flotante para Crear Envío -->
+        <button id="createShipmentBtn" class="fixed bottom-8 right-8 bg-emerald-600 text-white p-4 rounded-full shadow-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-4 focus:ring-offset-gray-900 focus:ring-emerald-500 transition-transform hover:scale-110">
+            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsliiNP8YG3bx_31S0Lb60XA1Q_rGVmuH6gA0_HQ0CZUg3card7ZVxozXzem9W_w3q/exec';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Personalizar UI con datos del usuario
+            const userName = user.name.split(' ')[0]; // Primer nombre
+            document.getElementById('userName').textContent = `Hola, ${userName}`;
+            document.getElementById('welcomeMessage').textContent = `¡Bienvenido de nuevo, ${userName}!`;
+
+            // Cargar envíos
+            loadShipments();
+
+            // Event Listeners
+            document.getElementById('logoutButton').addEventListener('click', () => {
+                sessionStorage.removeItem('ecocargoUser');
+                window.location.href = 'index.html';
+            });
+
+            document.getElementById('createShipmentBtn').addEventListener('click', () => {
+                window.location.href = 'create-shipment.html';
+            });
+        });
+
+        async function loadShipments() {
+            const listDiv = document.getElementById('shipmentsList');
+            const loader = document.getElementById('loader');
+            
+            try {
+                // const response = await fetch(`${SCRIPT_URL}?action=getShipments&userId=${user.id}`);
+                // const result = await response.json();
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const result = { 
+                    status: 'success', 
+                    shipments: [
+                        { orderId: 'ECO-123456', receiverName: 'Ana Solis', cost: '75.50', date: '2025-07-15', status: 'Entregado' },
+                        { orderId: 'ECO-789012', receiverName: 'Carlos Perez', cost: '120.00', date: '2025-07-14', status: 'En Camino' },
+                        { orderId: 'ECO-334455', receiverName: 'Maria Lopez', cost: '55.00', date: '2025-07-12', status: 'Cancelado' }
+                    ] 
+                };
+
+                loader.style.display = 'none';
+
+                if (result.status === 'success' && result.shipments.length > 0) {
+                    listDiv.innerHTML = result.shipments.map(s => `
+                        <div class="border-b border-gray-700 p-4 -mx-4 hover:bg-gray-700/50 transition-colors duration-200">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold text-white">Para: ${s.receiverName}</p>
+                                <p class="text-sm font-bold text-emerald-400">C$ ${s.cost}</p>
+                            </div>
+                            <div class="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                <span>${s.orderId} - ${new Date(s.date).toLocaleDateString()}</span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    s.status === 'Entregado' ? 'bg-green-500/20 text-green-400' :
+                                    s.status === 'En Camino' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    'bg-red-500/20 text-red-400'
+                                }">${s.status}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listDiv.innerHTML = `<p class="text-center text-gray-500 py-10">No tienes envíos registrados.</p>`;
+                }
+            } catch (error) {
+                loader.style.display = 'none';
+                listDiv.innerHTML = `<p class="text-center text-red-400 py-10">Error al cargar los envíos.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
