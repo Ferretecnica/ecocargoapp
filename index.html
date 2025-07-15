@@ -94,7 +94,6 @@
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsliiNP8YG3bx_31S0Lb60XA1Q_rGVmuH6gA0_HQ0CZUg3card7ZVxozXzem9W_w3q/exec';
             
             try {
-                // --- CÓDIGO REAL ACTIVADO ---
                 const response = await fetch(`${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`);
                 
                 if (!response.ok) {
@@ -103,8 +102,18 @@
 
                 const result = await response.json();
 
-                if (result.status === 'success') {
-                    sessionStorage.setItem('ecocargoUser', JSON.stringify(result.user));
+                // --- CORRECCIÓN CLAVE ---
+                // Se verifica 'result.success' y se construye el objeto 'user'
+                // que las otras páginas necesitan, adaptándose a la respuesta del script.
+                if (result.success === true) {
+                    const userEmail = result.email;
+                    const userObject = {
+                        id: userEmail, // Usamos el email como ID para las búsquedas
+                        name: userEmail.split('@')[0], // Usamos la parte antes del @ como nombre
+                        email: userEmail
+                    };
+                    
+                    sessionStorage.setItem('ecocargoUser', JSON.stringify(userObject));
                     window.location.href = 'dashboard.html';
                 } else {
                     throw new Error(result.message || 'Credenciales inválidas.');
