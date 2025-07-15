@@ -30,6 +30,9 @@
             background-color: #1f2937; /* gray-800 */
             border: 1px solid #374151; /* gray-700 */
         }
+        #progressBar, #truckIcon {
+            transition: all 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -64,6 +67,44 @@
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h1 id="welcomeMessage" class="text-3xl font-bold mb-6"></h1>
+
+            <!-- Order Tracker -->
+            <div id="orderTracker" class="card p-6 rounded-xl shadow-lg mb-8 hidden">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="trackerStatus" class="text-2xl font-bold text-white"></h2>
+                        <p id="trackerSubtitle" class="text-gray-400"></p>
+                    </div>
+                    <div class="text-right">
+                        <p id="trackerTime" class="text-lg font-semibold text-emerald-400"></p>
+                        <p class="text-xs text-gray-400">Tiempo estimado</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <div class="relative h-2 bg-gray-600 rounded-full">
+                        <div id="trackerProgressBar" class="absolute h-2 bg-emerald-500 rounded-full"></div>
+                        <div id="truckIcon" class="absolute -top-3.5" style="transform: translateX(-50%);">
+                            <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM15.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+                                <path fill-rule="evenodd" d="M5 11a3 3 0 0 1 3-3h5.5a3.5 3.5 0 0 1 3.5 3.5v1.838a3.501 3.501 0 0 1-1.152 2.61l-1.005 1.006A1 1 0 0 1 14.096 20H9a1 1 0 0 1-1-1v-5H5.5a.5.5 0 0 1-.5-.5V11Zm10.5 3.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" clip-rule="evenodd" />
+                                <path d="M3 11a1 1 0 0 1 1-1h1V7a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v4H3Z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <img class="w-10 h-10 rounded-full" src="https://placehold.co/40x40/374151/a0aec0?text=A" alt="Agente de entrega">
+                        <div>
+                            <p id="agentName" class="font-semibold text-white">Carlos Rodriguez</p>
+                            <p class="text-xs text-gray-400">Agente de Entrega</p>
+                        </div>
+                    </div>
+                    <button class="bg-emerald-600/80 p-2 rounded-full text-white hover:bg-emerald-600">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>
+                    </button>
+                </div>
+            </div>
             
             <!-- Tarjetas de Estadísticas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -96,10 +137,8 @@
                 </div>
                 <!-- Columna de Gráfico -->
                 <div class="lg:col-span-2">
-                    <!-- CORRECCIÓN: Se añade 'flex flex-col' al contenedor de la tarjeta -->
                     <div class="card p-6 rounded-xl shadow-lg h-full flex flex-col">
                         <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex-shrink-0">Actividad Semanal</h2>
-                        <!-- CORRECCIÓN: Se envuelve el canvas en un div con 'relative' y 'flex-grow' -->
                         <div class="relative flex-grow w-full">
                             <canvas id="shipmentsChart"></canvas>
                         </div>
@@ -153,7 +192,6 @@
                 if (result.success === true && result.data && result.data.length > 0) {
                     const shipments = result.data;
                     
-                    // Renderizar lista de envíos
                     listDiv.innerHTML = shipments.map(s => `
                         <div class="border-b border-gray-700 p-4 -mx-4 hover:bg-gray-700/50 transition-colors duration-200">
                             <div class="flex justify-between items-center">
@@ -172,12 +210,11 @@
                         </div>
                     `).join('');
                     
-                    // Calcular y mostrar estadísticas
                     calculateAndDisplayStats(shipments);
+                    displayOrderTracker(shipments);
                     
                 } else {
                     listDiv.innerHTML = `<p class="text-center text-gray-500 py-10">No tienes envíos registrados.</p>`;
-                    // Incluso sin envíos, mostrar el gráfico vacío
                     calculateAndDisplayStats([]);
                 }
             } catch (error) {
@@ -186,22 +223,53 @@
             }
         }
 
+        function displayOrderTracker(shipments) {
+            const tracker = document.getElementById('orderTracker');
+            // Filtrar envíos que están activos (Pendiente o En Camino)
+            const activeShipments = shipments
+                .filter(s => s.status === 'Pendiente' || s.status === 'En Camino')
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Ordenar por más reciente
+
+            if (activeShipments.length > 0) {
+                const currentShipment = activeShipments[0];
+                const status = currentShipment.status;
+                
+                const trackerStatus = document.getElementById('trackerStatus');
+                const trackerSubtitle = document.getElementById('trackerSubtitle');
+                const trackerTime = document.getElementById('trackerTime');
+                const progressBar = document.getElementById('trackerProgressBar');
+                const truckIcon = document.getElementById('truckIcon');
+                
+                if (status === 'Pendiente') {
+                    trackerStatus.textContent = 'Envío Pendiente';
+                    trackerSubtitle.textContent = 'Esperando asignación de conductor.';
+                    trackerTime.textContent = 'N/A';
+                    progressBar.style.width = '10%';
+                    truckIcon.style.left = '10%';
+                } else { // 'En Camino'
+                    trackerStatus.textContent = 'En Camino';
+                    trackerSubtitle.textContent = `Tu envío (ID: ${currentShipment.orderId}) está en ruta.`;
+                    trackerTime.textContent = '2h'; // Dato de ejemplo
+                    progressBar.style.width = '60%';
+                    truckIcon.style.left = '60%';
+                }
+                
+                tracker.classList.remove('hidden');
+            } else {
+                tracker.classList.add('hidden');
+            }
+        }
+
         function calculateAndDisplayStats(shipments) {
-            // Calcular totales
             const totalShipments = shipments.length;
             const totalCost = shipments.reduce((sum, s) => sum + parseFloat(s.estimatedCost || 0), 0);
-            
-            // NOTA: El cálculo de KM requiere que el script devuelva la distancia.
-            // Asumiremos que está en 's.fullDetails.distance' si existe.
             const totalKm = shipments.reduce((sum, s) => sum + parseFloat(s.fullDetails?.distance || 0), 0);
 
-            // Actualizar tarjetas de estadísticas
             document.getElementById('totalShipments').textContent = totalShipments;
             document.getElementById('totalCost').textContent = `C$ ${totalCost.toFixed(2)}`;
             document.getElementById('totalKm').textContent = `${totalKm.toFixed(2)} km`;
 
-            // Preparar datos para el gráfico
-            const weeklyData = [0, 0, 0, 0, 0, 0, 0]; // Dom, Lun, Mar, Mié, Jue, Vie, Sáb
+            const weeklyData = [0, 0, 0, 0, 0, 0, 0];
             const today = new Date();
             const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
 
