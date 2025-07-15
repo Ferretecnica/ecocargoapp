@@ -356,32 +356,39 @@ async function handleConfirm() {
     btnText.classList.add('hidden');
     spinner.classList.remove('hidden');
 
+    // --- CORRECCIÓN CLAVE ---
+    // Se construye el objeto 'payload' exactamente como lo espera el script.
     const payload = {
-        action: 'saveShipment', ...formState,
-        senderCoords: `${formState.sender.coords.lat},${formState.sender.coords.lng}`,
-        receiverCoords: `${formState.receiver.coords.lat},${formState.receiver.coords.lng}`,
-        userId: user.id
+        action: 'saveShipment',
+        shipmentData: {
+            userEmail: user.email,
+            orderId: formState.orderId,
+            senderName: formState.sender.name,
+            receiverName: formState.receiver.name,
+            estimatedCost: formState.cost,
+            // Empaquetamos toda la información del estado del formulario para un registro completo
+            fullDetails: {
+                ...formState,
+                senderCoords: `${formState.sender.coords.lat},${formState.sender.coords.lng}`,
+                receiverCoords: `${formState.receiver.coords.lat},${formState.receiver.coords.lng}`
+            }
+        }
     };
 
     try {
-        // --- CÓDIGO REAL ACTIVADO ---
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Importante para Google Apps Script si no se maneja CORS
+            mode: 'no-cors', 
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload)
         });
         
-        // Nota: Con 'no-cors', no podemos leer la respuesta, asumimos éxito si no hay error de red.
-        // La lógica de abajo se ejecutará inmediatamente.
-        // Si necesitas leer la respuesta, debes configurar CORS en tu script de Google.
-
         showNotification('success', '¡Envío Registrado!', 'Se abrirá WhatsApp para que compartas los detalles.');
-        const senderLink = `https://www.google.com/maps?q=${payload.senderCoords}`;
-        const receiverLink = `https://www.google.com/maps?q=${payload.receiverCoords}`;
-        const message = `*Nuevo envío Ecocargo (ID: ${payload.orderId})*\n\n*De:* ${payload.sender.name}\n*Para:* ${payload.receiver.name}\n*Costo:* C$ ${payload.cost}\n\n*Origen:* ${senderLink}\n*Destino:* ${receiverLink}`;
+        const senderLink = `https://www.google.com/maps?q=${formState.sender.coords.lat},${formState.sender.coords.lng}`;
+        const receiverLink = `https://www.google.com/maps?q=${formState.receiver.coords.lat},${formState.receiver.coords.lng}`;
+        const message = `*Nuevo envío Ecocargo (ID: ${formState.orderId})*\n\n*De:* ${formState.sender.name}\n*Para:* ${formState.receiver.name}\n*Costo:* C$ ${formState.cost}\n\n*Origen:* ${senderLink}\n*Destino:* ${receiverLink}`;
         
         setTimeout(() => {
             window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
